@@ -63,12 +63,20 @@ int main(int argc, char **argv) {
 
   // read data from the new client_socket
   char buffer[1024] = {0};
-  recv(client_fd, buffer, sizeof(buffer), 0);
+  int bytes_received = recv(client_fd, buffer, sizeof(buffer), 0);
+  if (bytes_received < 0){
+    std::cerr << "receive failed\n"; 
+    return 1;
+  }
   std::cout << "Message from client: " << buffer << std::endl;
   
   // respond to the client message with 200 OK
-  const char* response_200 = "HTTP/1.1 200 OK\r\n\r\n";
-  send(client_fd, response_200, sizeof(response_200), 0);
+  char response_200[] = "HTTP/1.1 200 OK\r\n\r\n";
+  int bytes_sent = send(client_fd, response_200, strlen(response_200), 0);
+  if (bytes_sent < 0){
+    std::cerr << "send failed\n"; 
+    return 1;
+  }
 
   close(server_fd);
 
