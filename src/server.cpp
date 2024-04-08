@@ -8,6 +8,28 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+std::string get_path (char* recv_buffer) {
+  int pre_space {3};
+  while (recv_buffer[pre_space-3]!='G' &&
+         recv_buffer[pre_space-2]!='E' &&
+         recv_buffer[pre_space-1]!='T') 
+         ++pre_space;
+
+  int post_space {pre_space+2};
+  while (recv_buffer[post_space+1]!='H' &&
+         recv_buffer[post_space+2]!='T' &&
+         recv_buffer[post_space+3]!='T' &&
+         recv_buffer[post_space+4]!='P') 
+         ++post_space;
+
+  std::string req_path {};
+  for (int i = pre_space+1; i<post_space; ++i) {
+    req_path += recv_buffer[i];
+  }
+
+  return req_path;
+}
+
 int main(int argc, char **argv) {
   
   // Create the server socket. fd is file descriptor, because everything
@@ -70,9 +92,14 @@ int main(int argc, char **argv) {
   }
   std::cout << "Message from client: " << buffer << std::endl;
   
-  // respond to the client message with 200 OK
-  char response_200[] = "HTTP/1.1 200 OK\r\n\r\n";
-  int bytes_sent = send(client_fd, response_200, strlen(response_200), 0);
+  // parse the client request for the method path
+  char* response;
+  if (get_path(buffer) == "/")
+    response = "HTTP/1.1 200 OK\r\n\r\n";
+  else
+    response = "HTTP/1.1 404 Not Found\r\n\r\n";
+
+  int bytes_sent = send(client_fd, response, strlen(response), 0);
   if (bytes_sent < 0){
     std::cerr << "send failed\n"; 
     return 1;
