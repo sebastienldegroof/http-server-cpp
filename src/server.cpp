@@ -27,6 +27,8 @@ std::string get_path (char* recv_buffer) {
     req_path += recv_buffer[i];
   }
 
+  std::cout << req_path << std::endl;
+
   return req_path;
 }
 
