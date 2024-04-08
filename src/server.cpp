@@ -93,13 +93,15 @@ int main(int argc, char **argv) {
   std::cout << "Message from client: " << buffer << std::endl;
   
   // parse the client request for the method path
-  char* response;
-  if (get_path(buffer) == "/")
-    response = "HTTP/1.1 200 OK\r\n\r\n";
-  else
-    response = "HTTP/1.1 404 Not Found\r\n\r\n";
+  int bytes_sent;
+  if (get_path(buffer) == "/") {
+    char response[] = "HTTP/1.1 200 OK\r\n\r\n";
+    bytes_sent = send(client_fd, response, strlen(response), 0);
+  } else {
+    char response[] = "HTTP/1.1 404 Not Found\r\n\r\n";
+    bytes_sent = send(client_fd, response, strlen(response), 0);
+  }
 
-  int bytes_sent = send(client_fd, response, strlen(response), 0);
   if (bytes_sent < 0){
     std::cerr << "send failed\n"; 
     return 1;
