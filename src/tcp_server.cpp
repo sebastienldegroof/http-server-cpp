@@ -62,15 +62,12 @@ int tcp_server::run_server() {
   }
   std::cout << "Message from client: " << buffer << std::endl;
   
-  // parse the client request for the method path
+  // send the data to the HTTP server for processing
   int bytes_sent;
-  if (get_path(buffer) == "/") {
-    char response[] = "HTTP/1.1 200 OK\r\n\r\n";
-    bytes_sent = send(client_fd, response, strlen(response), 0);
-  } else {
-    char response[] = "HTTP/1.1 404 Not Found\r\n\r\n";
-    bytes_sent = send(client_fd, response, strlen(response), 0);
-  }
+  char* response = process_request(buffer).data();
+  bytes_sent = send(client_fd, response, strlen(response), 0);
+
+  std::cout << "Message to client: " << response << std::endl;
 
   if (bytes_sent < 0){
     std::cerr << "send failed\n"; 
