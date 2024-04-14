@@ -64,8 +64,8 @@ int tcp_server::run_server() {
   
   // send the data to the HTTP server for processing
   int bytes_sent;
-  char* response = process_request(buffer).data();
-  bytes_sent = send(client_fd, response, strlen(response), 0);
+  std::string response = process_request(buffer);
+  bytes_sent = send(client_fd, response.c_str(), response.size(), 0);
 
   std::cout << "Message to client: " << response << std::endl;
 

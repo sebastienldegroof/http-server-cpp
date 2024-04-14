@@ -27,10 +27,8 @@ std::string process_request (char* recv_buffer) {
     if (path == "/") return "HTTP/1.1 200 OK\r\n\r\n";
     else if (path.substr(0,6) == "/echo/") {
         std::string echo {path.substr(6)};
-        std::cout << "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " << 
-        std::to_string(echo.length()) << "\r\n" <<
-        echo << "\r\n\r\n";
-        return "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(echo.length()) + "/r/n" + echo;
+        return "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " 
+        + std::to_string(echo.length()) + "\r\n" + echo + "\r\n";
     }
     else return "HTTP/1.1 404 Not Found\r\n\r\n";
 }
