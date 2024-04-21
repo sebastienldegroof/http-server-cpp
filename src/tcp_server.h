@@ -10,10 +10,13 @@
 
 class tcp_server {
   public:
+    tcp_server();
     tcp_server(int port);
+    tcp_server(int port, std::string path);
     int run_server();
 
   private:
+    std::string dir_path;
     int server_port;
     int server_fd;
     int client_fd;

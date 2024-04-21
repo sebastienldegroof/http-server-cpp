@@ -1,7 +1,21 @@
 #include "tcp_server.h"
 #include "http_server.h"
 
+tcp_server::tcp_server() {
+  dir_path = "./";
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_addr.s_addr = INADDR_ANY;
+  server_addr.sin_port = htons(4221);
+}
+
 tcp_server::tcp_server(int port) : server_port(port) {
+  dir_path = "./";
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_addr.s_addr = INADDR_ANY;
+  server_addr.sin_port = htons(server_port);
+}
+
+tcp_server::tcp_server(int port, std::string directory) : server_port(port), dir_path(directory) {
   server_addr.sin_family = AF_INET;
   server_addr.sin_addr.s_addr = INADDR_ANY;
   server_addr.sin_port = htons(server_port);
@@ -68,12 +82,11 @@ int tcp_server::run_server() {
     // select() returns the number of ready descriptors as an int.
     // select() modifies the fd_sets refernced to only contains the
     // ready fds.
-    std::cout << "Select called.\n";
     if ( select(max_fd + 1, &temp_fds, NULL, NULL, NULL) != 1 ){
       std::cerr << "Select error or no connections received\n";
       return 1;
     }
-    std::cout << "Select complete.\n";
+
     // Now, loop over the working fd_set and check for activity
     for (int i = 0; i <= max_fd; ++i){
       if (FD_ISSET(i, &temp_fds)) {
@@ -85,11 +98,11 @@ int tcp_server::run_server() {
         if (i == server_fd) {
 
           // accept() returns the fd of a successful connection, or -1 on error.
+          client_fd = 0;
           while ( client_fd != -1 ) {
 
             // accept() the new connection
             socklen_t addrlen = sizeof (client_addr);
-            std::cout << "accept called\n";
             client_fd = accept(server_fd, (struct sockaddr *) &client_addr, &addrlen);
 
             if ( client_fd < 0 ){
@@ -119,7 +132,7 @@ int tcp_server::run_server() {
           std::cout << "Message from client: " << buffer << std::endl;
 
           // send the data to the HTTP server for processing
-          std::string response = process_request(buffer);
+          std::string response = process_request(buffer, dir_path);
 
           // and respond with that request
           bytes_sent = send(i, response.c_str(), response.size(), 0);
@@ -127,11 +140,14 @@ int tcp_server::run_server() {
           if (bytes_sent < 0) std::cerr << "send failed\n"; 
 
           // then close that connection and remove from the master fd_set
+          std::cout << "Closing connection to client." << std::endl;
           close(i);
           FD_CLR(i, &socket_fds);
           // make sure we decrement the max_fd to the right value
           if (i == max_fd) {
-            while (FD_ISSET(max_fd, &socket_fds) == false) max_fd -= 1;
+            while (FD_ISSET(max_fd, &socket_fds) == false) {
+              max_fd -= 1;
+            }
           }
         }
       }

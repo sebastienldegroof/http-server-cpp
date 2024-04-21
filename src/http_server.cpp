@@ -1,22 +1,59 @@
 #include "http_server.h"
 
 std::string get_path (char* recv_buffer) {
-  int pre_space {3};
-  while (recv_buffer[pre_space-3]!='G' || recv_buffer[pre_space-2]!='E' || recv_buffer[pre_space-1]!='T') {
-    ++pre_space;
+  std::string path {};
+  int count { 0 };
+  char buf_char;
+
+  // increment past the method
+  while (recv_buffer[count] != ' ' ) ++count;
+  ++count;
+
+  // increment until the whitespace after the path
+  while ( recv_buffer[count] != ' ' ) {
+    path += recv_buffer[count];
+    ++count;
   }
 
-  int post_space {pre_space+2};
-  while (recv_buffer[post_space+1]!='H' || recv_buffer[post_space+2]!='T' || recv_buffer[post_space+3]!='T' || recv_buffer[post_space+4]!='P'){
-    ++post_space;
-  } 
-         
-  std::string req_path {};
-  for (int i = pre_space+1; i<post_space; ++i) {
-    req_path += recv_buffer[i];
+  return path;
+}
+
+std::vector<std::string> get_vector_path (char* recv_buffer) {
+  std::vector<std::string> vector_path;
+  
+  // Iterate through the buffer. We can use the whitespaces
+  // to find the end of the method string
+  int count { 0 };
+  while (recv_buffer[count] != ' ' ) ++count;
+  ++count;
+
+  // iterate through the chars in the path. When another / is found
+  // push the directory to the vector and start building the next dir
+  std::string dir {};
+  while (recv_buffer[count] != ' ' )  {
+    if ( recv_buffer[count] == '/') {
+      if (dir != "") vector_path.push_back(dir);
+      dir = "";
+    } else {
+      dir += recv_buffer[count];
+    }
+    ++count;
+  }
+  vector_path.push_back(dir);
+
+  return vector_path;
+}
+
+std::string get_method (char* recv_buffer) {
+  std::string method; 
+
+  int count {0};
+  while ( recv_buffer[count] != ' ' ) {
+    method += recv_buffer[count];
+    ++count;
   }
 
-  return req_path;
+  return method;
 }
 
 std::map<std::string, std::string> get_headers (char* recv_buffer) {
@@ -56,20 +93,53 @@ std::map<std::string, std::string> get_headers (char* recv_buffer) {
   return headers;
 }
 
-std::string process_request (char* recv_buffer) {
-  std::string path = get_path(recv_buffer);
-    
-  if (path == "/") return "HTTP/1.1 200 OK\r\n\r\n";
-    else if (path.substr(0,6) == "/echo/") {
-      std::string echo {path.substr(6)};
+std::string get_file (std::string dir, std::string filename) {
+  std::string file_contents {};
+  std::ifstream get_file(dir + filename);
+
+  if( get_file.fail() ) return "FILE_NOT_FOUND";
+  else {
+
+    std::string line;
+    while (std::getline(get_file, line)) {
+      file_contents += line + "\n";
+    }
+  }
+
+  return file_contents;
+}
+
+std::string process_request (char* recv_buffer, std::string dir_path) {
+  std::string method = get_method(recv_buffer);
+  std::vector<std::string> path_vector = get_vector_path(recv_buffer);
+  std::string path_str = get_path(recv_buffer);
+  std::map<std::string, std::string> headers = get_headers(recv_buffer);
+
+  if ( method == "GET" ) {
+    if ( path_str == "/" )
+      return "HTTP/1.1 200 OK\r\n\r\n";
+    else if ( path_vector[0] == "echo" ) {
+      std::string echo {path_str.substr(6)};
       return "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " 
       + std::to_string(echo.length()) + "\r\n\r\n" + echo;
     }
-    else if (path == "/user-agent") {
-      std::map<std::string, std::string> headers = get_headers(recv_buffer);
-      std:: string user_agent {headers["User-Agent"]};
+    else if ( path_vector[0] == "user-agent" ) {
+      std::string user_agent {headers["User-Agent"]};
       return "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " 
       + std::to_string(user_agent.length()) + "\r\n\r\n" + user_agent;
+    } 
+    else if ( path_vector[0] == "files" ) {
+      std::string file_contents = get_file( dir_path, path_str.substr(7) );
+      if ( file_contents == "FILE_NOT_FOUND" ) {
+        return "HTTP/1.1 404 Not Found\r\n\r\n";
+      } else {
+        return "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: " 
+        + std::to_string(file_contents.length()) + "\r\n\r\n" + file_contents;
+      }
     }
-    else return "HTTP/1.1 404 Not Found\r\n\r\n";
+  } 
+  else {
+    return "HTTP/1.1 404 Not Found\r\n\r\n";
+  }
+  return "";
 }
