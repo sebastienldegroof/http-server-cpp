@@ -93,6 +93,17 @@ std::map<std::string, std::string> get_headers (char* recv_buffer) {
   return headers;
 }
 
+char* get_body (char* recv_buffer) {
+  // increase count until we get past the headers
+  int count {4};
+  while ( recv_buffer[count-4] != '\r' ||
+          recv_buffer[count-3] != '\n' ||
+          recv_buffer[count-2] != '\r' || 
+          recv_buffer[count-1] != '\n' ) count++;
+  
+  return &recv_buffer[count];
+}
+
 std::string get_file (std::string dir, std::string filename) {
   std::string file_contents {};
   std::ifstream get_file(dir + filename);
@@ -109,7 +120,20 @@ std::string get_file (std::string dir, std::string filename) {
   return file_contents;
 }
 
+int write_file (std::string dir, std::string filename, char* contents) {
+  std::ofstream file;
+  file.open(dir + filename);
+  if ( file.is_open() ) {
+    file << contents ;
+    file.close();
+    return 0;
+  } else
+    return -1;
+  
+}
+
 std::string process_request (char* recv_buffer, std::string dir_path) {
+
   std::string method = get_method(recv_buffer);
   std::vector<std::string> path_vector = get_vector_path(recv_buffer);
   std::string path_str = get_path(recv_buffer);
@@ -139,7 +163,18 @@ std::string process_request (char* recv_buffer, std::string dir_path) {
     } else {
       return "HTTP/1.1 404 Not Found\r\n\r\n";
     }
-  } 
+  } else if ( method == "POST" ) {
+    if ( path_vector[0] == "files") {
+      char* file_contents = get_body(recv_buffer);
+      if (write_file(dir_path, path_str.substr(7), file_contents) == 0) {
+        return "HTTP/1.1 201 Created\r\n\r\n";
+      } else {
+        return "HTTP/1.1 500 Internal Server Error\r\n\r\n";
+      }
+    } else {
+      return "HTTP/1.1 404 Not Found\r\n\r\n";
+    }
+  }
   else {
     return "HTTP/1.1 404 Not Found\r\n\r\n";
   }
