@@ -102,7 +102,7 @@ std::string get_file (std::string dir, std::string filename) {
 
     std::string line;
     while (std::getline(get_file, line)) {
-      file_contents += line + "\n";
+      file_contents += line;
     }
   }
 
