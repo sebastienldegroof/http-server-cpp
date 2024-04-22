@@ -1,19 +1,30 @@
+#include <getopt.h>
+
 #include "tcp_server.h"
 
 int main(int argc, char **argv) {
 
+  int opt {};
+  int opt_index {};
   std::string directory {};
-  for (int i = 0; i < argc-1; i++) {
-    if ( argv[i] == "--directory")
-      directory = argv[i+1];
+  struct option long_options[] = {
+    {"directory", required_argument, 0, 'd'},
+    {0, 0, 0, 0}
+  };
+
+  while ( (opt = getopt_long (argc, argv, "d:", long_options, &opt_index)) != -1 ){
+    if (opt == 'd')
+      directory = optarg;
   }
-  tcp_server server;
-  if (directory == "")
-    server = tcp_server(4221);
-  else
-    server = tcp_server(4221, directory);
 
-  server.run_server();
+  std::cout << directory << "\n";
 
+  if (directory == ""){
+    tcp_server server = tcp_server(4221);
+    server.run_server();
+  } else {
+    tcp_server server = tcp_server(4221, directory);
+    server.run_server();
+  }
   return 0;
 }

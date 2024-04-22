@@ -129,7 +129,7 @@ int tcp_server::run_server() {
             std::cerr << "receive failed\n"; 
             return 1;
           }
-          std::cout << "Message from client: " << buffer << std::endl;
+          std::cout << "Message from client: \n" << buffer << std::endl;
 
           // send the data to the HTTP server for processing
           std::string response = process_request(buffer, dir_path);
