@@ -136,7 +136,7 @@ int tcp_server::run_server() {
 
           // and respond with that request
           bytes_sent = send(i, response.c_str(), response.size(), 0);
-          std::cout << "Message to client: " << response << std::endl;
+          std::cout << "Message to client: \n" << response << std::endl;
           if (bytes_sent < 0) std::cerr << "send failed\n"; 
 
           // then close that connection and remove from the master fd_set

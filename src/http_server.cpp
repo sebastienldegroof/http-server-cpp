@@ -136,10 +136,11 @@ std::string process_request (char* recv_buffer, std::string dir_path) {
         return "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: " 
         + std::to_string(file_contents.length()) + "\r\n\r\n" + file_contents;
       }
+    } else {
+      return "HTTP/1.1 404 Not Found\r\n\r\n";
     }
   } 
   else {
     return "HTTP/1.1 404 Not Found\r\n\r\n";
   }
-  return "";
 }
