@@ -16,6 +16,7 @@ class tcp_server {
     int run_server();
 
   private:
+    const size_t MAX_BUFFER_SIZE = 1024;
     std::string dir_path;
     int server_port;
     int server_fd;

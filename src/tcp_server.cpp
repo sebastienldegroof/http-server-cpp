@@ -123,21 +123,23 @@ int tcp_server::run_server() {
         else {
 
           // read data from the ready descriptor
-          char buffer[1024] = {0};
-          bytes_received = recv(i, buffer, sizeof(buffer), 0);
+          char* rx_buffer = new char[MAX_BUFFER_SIZE];
+          bytes_received = recv(i, rx_buffer, MAX_BUFFER_SIZE, 0);
           if (bytes_received < 0){
             std::cerr << "receive failed\n"; 
             return 1;
           }
-          std::cout << "Message from client: \n" << buffer << std::endl;
+          std::cout << "Message from client: \n" << rx_buffer << std::endl;
 
           // send the data to the HTTP server for processing
-          std::string response = process_request(buffer, dir_path);
+          char* tx_buffer = new char[MAX_BUFFER_SIZE];
+          size_t tx_buffer_size = process_request(rx_buffer, tx_buffer, dir_path);
 
           // and respond with that request
-          bytes_sent = send(i, response.c_str(), response.size(), 0);
-          std::cout << "Message to client: \n" << response << std::endl;
+          bytes_sent = send(i, tx_buffer, tx_buffer_size, 0);
+          std::cout << "Message to client: \n" << tx_buffer << std::endl;
           if (bytes_sent < 0) std::cerr << "send failed\n"; 
+          delete[] tx_buffer;
 
           // then close that connection and remove from the master fd_set
           std::cout << "Closing connection to client." << std::endl;
